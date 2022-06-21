@@ -33,7 +33,7 @@ home = ENV['HOME']
 ENV["LC_ALL"] = "en_US.UTF-8"
 
 MACHINES = {
-  :lvm => {
+  :systemd => {
         :box_name => "centos/7",
         :box_version => "1804.02",
         :ip_addr => '192.168.56.101',
