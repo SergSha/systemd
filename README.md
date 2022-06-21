@@ -196,12 +196,12 @@ WantedBy=multi-user.target</pre>
 <p>Запускаем watchlog.timer:</p>
 
 <pre>[root@systemd ~]# systemctl status watchlog.timer
-● watchlog.timer - Run watchlog script every 30 second
+● watchlog.timer - Run watchlog script every 15 second
    Loaded: loaded (/etc/systemd/system/watchlog.timer; disabled; vendor preset: disabled)
    Active: active (elapsed) since Tue 2022-06-21 16:37:41 UTC; 7s ago
 
-Jun 21 16:37:41 systemd systemd[1]: Started Run watchlog script every 30 second.
-Jun 21 16:37:41 systemd systemd[1]: Starting Run watchlog script every 30 s...d.
+Jun 21 16:37:41 systemd systemd[1]: Started Run watchlog script every 15 second.
+Jun 21 16:37:41 systemd systemd[1]: Starting Run watchlog script every 15 s...d.
 Hint: Some lines were ellipsized, use -l to show in full.
 [root@systemd ~]#</pre>
 
@@ -228,6 +228,153 @@ Jun 21 16:51:47 localhost systemd: Started My watchlog service.</pre>
 Complete!
 [root@systemd ~]#</pre>
 
+<p>etc/rc.d/init.d/spawn-fcg - cам Init скрипт, который будем переписывать. <br />Но перед этим необходимо раскомментировать строки с переменными в
+/etc/sysconfig/spawn-fcgi. <br />Он должен получится следующего вида:</p>
 
+<pre>[root@systemd ~]# vi /etc/sysconfig/spawn-fcgi</pre>
 
-yum install epel-release -y && yum install spawn-fcgi php php-cli mod_fcgid httpd -y
+<pre># You must set some working options before the "spawn-fcgi" service will work.
+# If SOCKET points to a file, then this file is cleaned up by the init script.
+#
+# See spawn-fcgi(1) for all possible options.
+#
+# Example :
+SOCKET=/var/run/php-fcgi.sock
+OPTIONS="-u apache -g apache -s $SOCKET -S -M 0600 -C 32 -F 1 -P /var/run/spawn-fcgi.pid -- /usr/bin/php-cgi"</pre>
+
+<p>А сам юнит файл будет следующий вид:</p>
+
+<pre>[root@systemd ~]# vi /etc/systemd/system/spawn-fcgi.service</pre>
+
+<pre>[Unit]
+Description=Spawn-fcgi startup service by Otus
+After=network.target
+
+[Service]
+Type=simple
+PIDFile=/var/run/spawn-fcgi.pid
+EnvironmentFile=/etc/sysconfig/spawn-fcgi
+ExecStart=/usr/bin/spawn-fcgi -n $OPTIONS
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target</pre>
+
+<p>Убеждаемся что все успешно работает:</p>
+
+<pre>[root@systemd ~]# systemctl start spawn-fcgi.service 
+[root@systemd ~]#</pre>
+
+<pre>[root@systemd ~]# systemctl status spawn-fcgi.service 
+● spawn-fcgi.service - Spawn-fcgi startup service by Otus
+   Loaded: loaded (/etc/systemd/system/spawn-fcgi.service; disabled; vendor preset: disabled)
+   Active: active (running) since Tue 2022-06-21 19:31:47 UTC; 1min 31s ago
+ Main PID: 5181 (php-cgi)
+   CGroup: /system.slice/spawn-fcgi.service
+           ├─5181 /usr/bin/php-cgi
+           ├─5182 /usr/bin/php-cgi
+           ├─5183 /usr/bin/php-cgi
+           ├─5184 /usr/bin/php-cgi
+           ├─5185 /usr/bin/php-cgi
+           ├─5186 /usr/bin/php-cgi
+           ├─5187 /usr/bin/php-cgi
+           ├─5188 /usr/bin/php-cgi
+           ├─5189 /usr/bin/php-cgi
+           ├─5190 /usr/bin/php-cgi
+           ├─5191 /usr/bin/php-cgi
+           ├─5192 /usr/bin/php-cgi
+           ├─5193 /usr/bin/php-cgi
+           ├─5194 /usr/bin/php-cgi
+           ├─5195 /usr/bin/php-cgi
+           ├─5196 /usr/bin/php-cgi
+           ├─5197 /usr/bin/php-cgi
+           ├─5198 /usr/bin/php-cgi
+           ├─5199 /usr/bin/php-cgi
+           ├─5200 /usr/bin/php-cgi
+           ├─5201 /usr/bin/php-cgi
+           ├─5202 /usr/bin/php-cgi
+           ├─5203 /usr/bin/php-cgi
+           ├─5204 /usr/bin/php-cgi
+           ├─5205 /usr/bin/php-cgi
+           ├─5206 /usr/bin/php-cgi
+           ├─5207 /usr/bin/php-cgi
+           ├─5208 /usr/bin/php-cgi
+           ├─5209 /usr/bin/php-cgi
+           ├─5210 /usr/bin/php-cgi
+           ├─5211 /usr/bin/php-cgi
+           ├─5212 /usr/bin/php-cgi
+           └─5213 /usr/bin/php-cgi
+
+Jun 21 19:31:47 systemd systemd[1]: Started Spawn-fcgi startup service by Otus.
+Jun 21 19:31:47 systemd systemd[1]: Starting Spawn-fcgi startup service by .....
+Hint: Some lines were ellipsized, use -l to show in full.
+[root@systemd ~]#</pre>
+
+<h4># 3. Дополнить unit-файл httpd (он же apache) возможностью запустить несколько инстансов сервера с разными конфигурационными файлами.</h4>
+
+<p>Для запуска нескольких экземпляров сервиса будем использовать шаблон в конфигурации файла окружения:</p>
+
+<pre>[root@systemd ~]# systemctl edit --full httpd.service 
+# /usr/lib/systemd/system/httpd.service
+[Unit]
+Description=The Apache HTTP Server
+After=network.target remote-fs.target nss-lookup.target
+Documentation=man:httpd(8)
+Documentation=man:apachectl(8)
+
+[Service]
+Type=notify
+EnvironmentFile=/etc/sysconfig/httpd-%I
+ExecStart=/usr/sbin/httpd $OPTIONS -DFOREGROUND
+ExecReload=/usr/sbin/httpd $OPTIONS -k graceful
+ExecStop=/bin/kill -WINCH ${MAINPID}
+# We want systemd to give httpd some time to finish gracefully, but still want
+# it to kill httpd after TimeoutStopSec if something went wrong during the
+# graceful stop. Normally, Systemd sends SIGTERM signal right after the
+# ExecStop, which would kill httpd. We are sending useless SIGCONT here to give
+# httpd time to finish.
+KillSignal=SIGCONT
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+[root@systemd ~]#</pre>
+
+<p>В самом файле окружения (которых будет два) задается опция для запуска веб-сервера с необходимым конфигурационным файлом:</p>
+
+<pre>[root@systemd ~]# vi /etc/sysconfig/httpd-first</pre>
+
+<pre># /etc/sysconfig/httpd-first
+OPTIONS=-f conf/first.conf</pre>
+
+<pre>[root@systemd ~]# vi /etc/sysconfig/httpd-second</pre>
+
+<pre># /etc/sysconfig/httpd-second
+OPTIONS=-f conf/second.conf</pre>
+
+<p>В конфигурационных файлах должны указываем уникальные для каждого экземпляра опции Listen и PidFile:</p>
+
+<pre>[root@systemd ~]# vi /etc/httpd/conf/first.conf</pre>
+
+<pre>PidFile /var/run/httpd-first.pid
+Listen  8081</pre>
+
+<pre>[root@systemd ~]# vi /etc/httpd/conf/second.conf</pre>
+
+<pre>PidFile /var/run/httpd-second.pid
+Listen  8082</pre>
+
+<p>Запустим:</p>
+
+<pre>[root@systemd ~]# systemctl start httpd@first</pre>
+
+<pre>[root@systemd ~]# systemctl start httpd@second</pre>
+
+<p>Проверим:</p>
+
+<pre>[root@systemd ~]# systemctl status httpd@first</pre>
+
+<pre>[root@systemd ~]# systemctl status httpd@second</pre>
+
+<pre>[root@systemd ~]# ss -tnulp | grep httpd</pre>
+
