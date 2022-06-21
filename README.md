@@ -121,14 +121,14 @@ Vagrant.configure("2") do |config|
 
 <p>Для начала создаём файл с конфигурацией для сервиса в директории /etc/sysconfig - из неё сервис будет брать необходимые переменные:</p>
 
-<pre>[root@systemd ~]# cat > /etc/sysconfig/watchlog << EOF
-> # Configuration file for my watchlog service
-> # Place it to /etc/sysconfig
-> # File and word in that file that we will be monit
-> WORD="ALERT"
-> LOG=/var/log/watchlog.log
-> EOF
-[root@systemd ~]#</pre>
+<pre>[root@systemd ~]# vi /etc/sysconfig/watchlog</pre>
+
+<pre># Configuration file for my watchlog service
+# Place it to /etc/sysconfig
+
+# File and word in that file that we will be monit
+WORD="ALERT"
+LOG=/var/log/watchlog.log</pre>
 
 <p>Затем создаем /var/log/watchlog.log и пишем туда строки на своё усмотрение,
 плюс ключевое слово 'ALERT'</p>
@@ -146,7 +146,7 @@ Donec id orci id est vulputate ornare non eget urna.</pre>
 
 <p>Создадим скрипт:</p>
 
-<pre>[root@systemd ~]# cat > /opt/watchlog.sh</pre>
+<pre>[root@systemd ~]# vi /opt/watchlog.sh</pre>
 
 <pre>#!/bin/bash
 
@@ -183,11 +183,11 @@ ExecStart=/opt/watchlog.sh $WORD $LOG</pre>
 <pre>[root@systemd ~]# vi /etc/systemd/system/watchlog.timer</pre>
 
 <pre>[Unit]
-Description=Run watchlog script every 30 second
+Description=Run watchlog script every 15 second
 
 [Timer]
-# Run every 30 second
-OnUnitActiveSec=30
+# Run every 15 second
+OnUnitActiveSec=15
 Unit=watchlog.service
 
 [Install]
@@ -195,31 +195,39 @@ WantedBy=multi-user.target</pre>
 
 <p>Запускаем watchlog.timer:</p>
 
-<pre>[root@systemd ~]# systemctl start watchlog.timer
-[root@systemd ~]#</pre>
-
-<pre>[root@systemd ~]# status watchlog.timer
+<pre>[root@systemd ~]# systemctl status watchlog.timer
 ● watchlog.timer - Run watchlog script every 30 second
    Loaded: loaded (/etc/systemd/system/watchlog.timer; disabled; vendor preset: disabled)
-   Active: active (elapsed) since Tue 2022-06-21 13:59:39 UTC; 6s ago
+   Active: active (elapsed) since Tue 2022-06-21 16:37:41 UTC; 7s ago
 
-Jun 21 13:59:39 localhost.localdomain systemd[1]: Started Run watchlog script ....
-Jun 21 13:59:39 localhost.localdomain systemd[1]: Starting Run watchlog script....
+Jun 21 16:37:41 systemd systemd[1]: Started Run watchlog script every 30 second.
+Jun 21 16:37:41 systemd systemd[1]: Starting Run watchlog script every 30 s...d.
 Hint: Some lines were ellipsized, use -l to show in full.
 [root@systemd ~]#</pre>
 
 <p>И убедимся в результате:</p>
 
-<pre>[root@systemd ~]# tail -f /var/log/messages
-Jun 21 13:33:58 localhost dhclient[1638]: DHCPDISCOVER on eth1 to 255.255.255.255 port 67 interval 7 (xid=0x4d80dba7)
-Jun 21 13:34:05 localhost dhclient[1638]: DHCPDISCOVER on eth1 to 255.255.255.255 port 67 interval 7 (xid=0x4d80dba7)
-Jun 21 13:34:12 localhost dhclient[1638]: DHCPDISCOVER on eth1 to 255.255.255.255 port 67 interval 14 (xid=0x4d80dba7)
-Jun 21 13:34:17 localhost NetworkManager[573]: <warn>  [1655818457.9956] dhcp4 (eth1): request timed out
-Jun 21 13:34:17 localhost NetworkManager[573]: <info>  [1655818457.9957] dhcp4 (eth1): state changed unknown -> timeout
-Jun 21 13:34:18 localhost NetworkManager[573]: <info>  [1655818457.9972] dhcp4 (eth1): canceled DHCP transaction, DHCP client pid 1638
-Jun 21 13:34:18 localhost NetworkManager[573]: <info>  [1655818457.9973] dhcp4 (eth1): state changed timeout -> done
-Jun 21 13:34:18 localhost NetworkManager[573]: <info>  [1655818457.9977] device (eth1): state change: ip-config -> failed (reason 'ip-config-unavailable', sys-iface-state: 'managed')
-Jun 21 13:34:18 localhost NetworkManager[573]: <warn>  [1655818457.9981] device (eth1): Activation: failed for connection 'Wired connection 1'
-Jun 21 13:34:18 localhost NetworkManager[573]: <info>  [1655818457.9987] device (eth1): state change: failed -> disconnected (reason 'none', sys-iface-state: 'managed')
+<pre>[root@systemd ~]# tail -f /var/log/messages 
+Jun 21 16:48:47 localhost systemd: Started My watchlog service.
+Jun 21 16:49:47 localhost systemd: Starting My watchlog service...
+Jun 21 16:49:47 localhost root: Tue Jun 21 16:49:47 UTC 2022: I found word, Master!
+Jun 21 16:49:47 localhost systemd: Started My watchlog service.
+Jun 21 16:50:37 localhost systemd: Starting My watchlog service...
+Jun 21 16:50:37 localhost root: Tue Jun 21 16:50:37 UTC 2022: I found word, Master!
+Jun 21 16:50:37 localhost systemd: Started My watchlog service.
+Jun 21 16:51:47 localhost systemd: Starting My watchlog service...
+Jun 21 16:51:47 localhost root: Tue Jun 21 16:51:47 UTC 2022: I found word, Master!
+Jun 21 16:51:47 localhost systemd: Started My watchlog service.</pre>
+
+<h4>Из репозитория epel установить spawn-fcgi и переписать init-скрипт на unit-файл (имя service должно называться так же: spawn-fcgi).</h4>
+
+<p>Устанавливаем spawn-fcgi и необходимые для него пакеты:</p>
+
+<pre>[root@systemd ~]# yum install epel-release -y && yum install spawn-fcgi php php-cli mod_fcgid httpd -y
+...
+Complete!
 [root@systemd ~]#</pre>
 
+
+
+yum install epel-release -y && yum install spawn-fcgi php php-cli mod_fcgid httpd -y
