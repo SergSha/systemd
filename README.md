@@ -312,9 +312,16 @@ Hint: Some lines were ellipsized, use -l to show in full.
 
 <h4># 3. Дополнить unit-файл httpd (он же apache) возможностью запустить несколько инстансов сервера с разными конфигурационными файлами.</h4>
 
-<p>Для запуска нескольких экземпляров сервиса будем использовать шаблон в конфигурации файла окружения:</p>
+<p>Для запуска нескольких экземпляров сервиса будем использовать шаблон в конфигурации файла окружения.</p>
 
-<pre>[root@systemd ~]# systemctl edit --full httpd.service 
+<p>Скопируем httpd.service в httpd@.service:</p>
+
+<pre>[root@systemd ~]# cp /usr/lib/systemd/system/httpd.service /etc/systemd/system/httpd@.service 
+[root@systemd ~]#</pre>
+
+<p>В конце строки, которая начинается с EnvironmentFile, добавим "-%I"</p>
+
+<pre>[root@systemd ~]# systemctl edit --full httpd@.service 
 # /usr/lib/systemd/system/httpd.service
 [Unit]
 Description=The Apache HTTP Server
@@ -366,13 +373,64 @@ Listen  8082</pre>
 
 <p>Запустим:</p>
 
-<pre>[root@systemd ~]# systemctl start httpd@{first,second}</pre>
+<pre>[root@systemd ~]# systemctl start httpd@{first,second}
+[root@systemd ~]#</pre>
 
 <p>Проверим:</p>
 
-<pre>[root@systemd ~]# systemctl status httpd@first</pre>
+<pre>[root@systemd ~]# systemctl status httpd@first
+● httpd@first.service - The Apache HTTP Server
+   Loaded: loaded (/etc/systemd/system/httpd@.service; disabled; vendor preset: disabled)
+   Active: active (running) since Wed 2022-06-22 11:29:50 UTC; 4min 54s ago
+     Docs: man:httpd(8)
+           man:apachectl(8)
+ Main PID: 5008 (httpd)
+   Status: "Total requests: 0; Current requests/sec: 0; Current traffic:   0 B/sec"
+   CGroup: /system.slice/system-httpd.slice/httpd@first.service
+           ├─5008 /usr/sbin/httpd -f conf/first.conf -DFOREGROUND
+           ├─5011 /usr/sbin/httpd -f conf/first.conf -DFOREGROUND
+           ├─5012 /usr/sbin/httpd -f conf/first.conf -DFOREGROUND
+           ├─5013 /usr/sbin/httpd -f conf/first.conf -DFOREGROUND
+           ├─5014 /usr/sbin/httpd -f conf/first.conf -DFOREGROUND
+           ├─5018 /usr/sbin/httpd -f conf/first.conf -DFOREGROUND
+           └─5019 /usr/sbin/httpd -f conf/first.conf -DFOREGROUND
 
-<pre>[root@systemd ~]# systemctl status httpd@second</pre>
+Jun 22 11:29:49 localhost.localdomain systemd[1]: Starting The Apache HTTP Server...
+Jun 22 11:29:50 localhost.localdomain httpd[5008]: AH00558: httpd: Could not reli...e
+Jun 22 11:29:50 localhost.localdomain systemd[1]: Started The Apache HTTP Server.
+Hint: Some lines were ellipsized, use -l to show in full.
+[root@systemd ~]#</pre>
+
+<pre></pre>
+
+<pre>[root@systemd ~]# systemctl status httpd@second
+● httpd@second.service - The Apache HTTP Server
+   Loaded: loaded (/etc/systemd/system/httpd@.service; disabled; vendor preset: disabled)
+   Active: active (running) since Wed 2022-06-22 11:29:50 UTC; 8min ago
+     Docs: man:httpd(8)
+           man:apachectl(8)
+ Main PID: 5009 (httpd)
+   Status: "Total requests: 0; Current requests/sec: 0; Current traffic:   0 B/sec"
+   CGroup: /system.slice/system-httpd.slice/httpd@second.service
+           ├─5009 /usr/sbin/httpd -f conf/second.conf -DFOREGROUND
+           ├─5010 /usr/sbin/httpd -f conf/second.conf -DFOREGROUND
+           ├─5015 /usr/sbin/httpd -f conf/second.conf -DFOREGROUND
+           ├─5016 /usr/sbin/httpd -f conf/second.conf -DFOREGROUND
+           ├─5017 /usr/sbin/httpd -f conf/second.conf -DFOREGROUND
+           ├─5020 /usr/sbin/httpd -f conf/second.conf -DFOREGROUND
+           └─5021 /usr/sbin/httpd -f conf/second.conf -DFOREGROUND
+
+Jun 22 11:29:49 localhost.localdomain systemd[1]: Starting The Apache HTTP Server...
+Jun 22 11:29:50 localhost.localdomain httpd[5009]: AH00558: httpd: Could not reli...e
+Jun 22 11:29:50 localhost.localdomain systemd[1]: Started The Apache HTTP Server.
+Hint: Some lines were ellipsized, use -l to show in full.
+[root@systemd ~]#</pre>
 
 <pre>[root@systemd ~]# ss -tnulp | grep httpd</pre>
 
+<pre>[root@systemd ~]# ss -tnulp | grep httpd
+tcp    LISTEN     0      128      :::8081                 :::*                   users:(("httpd",pid=5019,fd=4),("httpd",pid=5018,fd=4),("httpd",pid=5014,fd=4),("httpd",pid=5013,fd=4),("httpd",pid=5012,fd=4),("httpd",pid=5011,fd=4),("httpd",pid=5008,fd=4))
+tcp    LISTEN     0      128      :::8082                 :::*                   users:(("httpd",pid=5021,fd=4),("httpd",pid=5020,fd=4),("httpd",pid=5017,fd=4),("httpd",pid=5016,fd=4),("httpd",pid=5015,fd=4),("httpd",pid=5010,fd=4),("httpd",pid=5009,fd=4))
+[root@systemd ~]#</pre>
+
+<p>Наблюдаем, что запустились два экземпляра юнита httpd, каждый которого имеет свои конфигурации и настройки.</p>
