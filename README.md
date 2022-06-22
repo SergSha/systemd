@@ -144,7 +144,7 @@ Nullam sed metus ornare, eleifend felis nec, ornare sapien.
 Fusce lacus ante, pulvinar non vestibulum vitae, bibendum quis ante.
 Donec id orci id est vulputate ornare non eget urna.</pre>
 
-<p>Создадим скрипт:</p>
+<p>Создадим скрипт watchlog.sh:</p>
 
 <pre>[root@systemd ~]# vi /opt/watchlog.sh</pre>
 
@@ -166,7 +166,7 @@ fi</pre>
 
 <p>Команда logger отправляет лог в системный журнал.</p>
 
-<p>Создадим юнит для сервиса:</p>
+<p>Создадим юнит watchlog для сервиса:</p>
 
 <pre>[root@systemd ~]# vi /etc/systemd/system/watchlog.service</pre>
 
@@ -178,16 +178,16 @@ Type=oneshot
 EnvironmentFile=/etc/sysconfig/watchlog
 ExecStart=/opt/watchlog.sh $WORD $LOG</pre>
 
-<p>Создадим юнит для таймера:</p>
+<p>Создадим юнит watchlog для таймера:</p>
 
 <pre>[root@systemd ~]# vi /etc/systemd/system/watchlog.timer</pre>
 
 <pre>[Unit]
-Description=Run watchlog script every 15 second
+Description=Run watchlog script every 30 second
 
 [Timer]
-# Run every 15 second
-OnUnitActiveSec=15
+# Run every 30 second
+OnUnitActiveSec=30
 Unit=watchlog.service
 
 [Install]
@@ -196,12 +196,12 @@ WantedBy=multi-user.target</pre>
 <p>Запускаем watchlog.timer:</p>
 
 <pre>[root@systemd ~]# systemctl status watchlog.timer
-● watchlog.timer - Run watchlog script every 15 second
+● watchlog.timer - Run watchlog script every 30 second
    Loaded: loaded (/etc/systemd/system/watchlog.timer; disabled; vendor preset: disabled)
    Active: active (elapsed) since Tue 2022-06-21 16:37:41 UTC; 7s ago
 
-Jun 21 16:37:41 systemd systemd[1]: Started Run watchlog script every 15 second.
-Jun 21 16:37:41 systemd systemd[1]: Starting Run watchlog script every 15 s...d.
+Jun 21 16:37:41 systemd systemd[1]: Started Run watchlog script every 30 second.
+Jun 21 16:37:41 systemd systemd[1]: Starting Run watchlog script every 30 s...d.
 Hint: Some lines were ellipsized, use -l to show in full.
 [root@systemd ~]#</pre>
 
@@ -352,7 +352,7 @@ OPTIONS=-f conf/first.conf</pre>
 <pre># /etc/sysconfig/httpd-second
 OPTIONS=-f conf/second.conf</pre>
 
-<p>В конфигурационных файлах должны указываем уникальные для каждого экземпляра опции Listen и PidFile:</p>
+<p>В конфигурационных файлах указываем уникальные для каждого экземпляра опции Listen и PidFile:</p>
 
 <pre>[root@systemd ~]# vi /etc/httpd/conf/first.conf</pre>
 
@@ -366,9 +366,7 @@ Listen  8082</pre>
 
 <p>Запустим:</p>
 
-<pre>[root@systemd ~]# systemctl start httpd@first</pre>
-
-<pre>[root@systemd ~]# systemctl start httpd@second</pre>
+<pre>[root@systemd ~]# systemctl start httpd@{first,second}</pre>
 
 <p>Проверим:</p>
 
