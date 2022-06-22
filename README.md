@@ -359,17 +359,29 @@ OPTIONS=-f conf/first.conf</pre>
 <pre># /etc/sysconfig/httpd-second
 OPTIONS=-f conf/second.conf</pre>
 
+<p>Конфигурационные файлы скопируем из httpd.conf:</p>
+
+<pre>[root@systemd ~]# cp /etc/httpd/conf/{httpd,first}.conf
+<pre>[root@systemd ~]# cp /etc/httpd/conf/{httpd,second}.conf
+[root@systemd ~]#</pre>
+
 <p>В конфигурационных файлах указываем уникальные для каждого экземпляра опции Listen и PidFile:</p>
 
 <pre>[root@systemd ~]# vi /etc/httpd/conf/first.conf</pre>
 
-<pre>PidFile /var/run/httpd-first.pid
-Listen  8081</pre>
+<pre>...
+PidFile /var/run/httpd-first.pid
+...
+Listen  8081
+...</pre>
 
 <pre>[root@systemd ~]# vi /etc/httpd/conf/second.conf</pre>
 
-<pre>PidFile /var/run/httpd-second.pid
-Listen  8082</pre>
+<pre>...
+PidFile /var/run/httpd-second.pid
+...
+Listen  8082
+...</pre>
 
 <p>Запустим:</p>
 
