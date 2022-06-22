@@ -362,7 +362,7 @@ OPTIONS=-f conf/second.conf</pre>
 <p>Конфигурационные файлы скопируем из httpd.conf:</p>
 
 <pre>[root@systemd ~]# cp /etc/httpd/conf/{httpd,first}.conf
-<pre>[root@systemd ~]# cp /etc/httpd/conf/{httpd,second}.conf
+[root@systemd ~]# cp /etc/httpd/conf/{httpd,second}.conf
 [root@systemd ~]#</pre>
 
 <p>В конфигурационных файлах указываем уникальные для каждого экземпляра опции Listen и PidFile:</p>
