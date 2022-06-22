@@ -219,7 +219,7 @@ Jun 21 16:51:47 localhost systemd: Starting My watchlog service...
 Jun 21 16:51:47 localhost root: Tue Jun 21 16:51:47 UTC 2022: I found word, Master!
 Jun 21 16:51:47 localhost systemd: Started My watchlog service.</pre>
 
-<h4># 4. Из репозитория epel установить spawn-fcgi и переписать init-скрипт на unit-файл (имя service должно называться так же: spawn-fcgi).</h4>
+<h4># 2. Из репозитория epel установить spawn-fcgi и переписать init-скрипт на unit-файл (имя service должно называться так же: spawn-fcgi).</h4>
 
 <p>Устанавливаем spawn-fcgi и необходимые для него пакеты:</p>
 
