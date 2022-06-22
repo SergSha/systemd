@@ -383,6 +383,11 @@ PidFile /var/run/httpd-second.pid
 Listen  8082
 ...</pre>
 
+<p>Обновим конфиги:</p>
+
+<pre>[root@systemd ~]# systemctl daemon-reload
+[root@systemd ~]#</pre>
+
 <p>Запустим:</p>
 
 <pre>[root@systemd ~]# systemctl start httpd@{first,second}
