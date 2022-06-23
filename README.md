@@ -2,6 +2,8 @@
 
 <h4>Описание домашнего задания</h4>
 
+<p>Выполнить следующие задания и подготовить развёртывание результата выполнения с использованием Vagrant и Vagrant shell provisioner (или Ansible, на Ваше усмотрение):</p>
+
 <ol>
   <li>Написать service, который будет раз в 30 секунд мониторить лог на предмет наличия ключевого слова (файл лога и ключевое слово должны задаваться в /etc/sysconfig).</li>
   <li>Из репозитория epel установить spawn-fcgi и переписать init-скрипт на unit-файл (имя service должно называться так же: spawn-fcgi).</li>
@@ -228,7 +230,7 @@ Jun 21 16:51:47 localhost systemd: Started My watchlog service.</pre>
 Complete!
 [root@systemd ~]#</pre>
 
-<p>etc/rc.d/init.d/spawn-fcg - cам Init скрипт, который будем переписывать. <br />Но перед этим необходимо раскомментировать строки с переменными в
+<p>etc/rc.d/init.d/spawn-fcgi - cам Init скрипт, который будем переписывать. <br />Но перед этим необходимо раскомментировать строки с переменными в
 /etc/sysconfig/spawn-fcgi. <br />Он должен получится следующего вида:</p>
 
 <pre>[root@systemd ~]# vi /etc/sysconfig/spawn-fcgi</pre>
